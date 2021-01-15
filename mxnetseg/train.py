@@ -22,31 +22,65 @@ from mxnetseg.data import get_dataset_info
 from mxnetseg.tools import root_dir, get_contexts, get_strftime, cudnn_auto_tune, save_checkpoint
 
 
-def fit(cfg: dict, ctx: list, wp_name, log_interval=5, t_start=None, no_val=False):
-    net = FitFactory.get_model(cfg, ctx)
-    train_iter, num_train = FitFactory.data_iter(cfg.get('data_name'), cfg.get('bs_train'),
-                                                 root=get_dataset_info(cfg.get('data_name'))[0],
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="MXNet segmentation",
+        epilog="python train.py --model fcn --ctx 0 1 2 3",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--model', type=str, default='fcn',
+                        help='model name')
+    parser.add_argument('--ctx', type=int, nargs='+', default=(0, 1),
+                        help='GPU id or leave None to use CPU')
+    parser.add_argument('--wandb', type=str, default='sweep-demo',
+                        help='project name of wandb')
+    parser.add_argument('--log-interval', type=int, default=5,
+                        help='batch interval for log')
+    parser.add_argument('--no-val', action='store_true', default=False,
+                        help='skip validation during training')
+
+    # auto config when using wandb sweep, consistent with sweep.yaml
+    parser.add_argument('--lr', type=float, default=None,
+                        help='init learning rate')
+    parser.add_argument('--wd', type=float, default=None,
+                        help='weight decay')
+
+    arg = parser.parse_args()
+    return arg
+
+
+def fit(run, ctx, log_interval=5, no_val=False, logger=None):
+    net = FitFactory.get_model(wandb.config, ctx)
+    train_iter, num_train = FitFactory.data_iter(wandb.config.data_name, wandb.config.bs_train,
+                                                 root=get_dataset_info(wandb.config.data_name)[0],
                                                  split='train',  # sometimes would be 'trainval'
                                                  mode='train',
-                                                 base_size=cfg.get('base_size'),
-                                                 crop_size=cfg.get('crop_size'))
-    val_iter, num_valid = FitFactory.data_iter(cfg.get('data_name'), cfg.get('bs_val'),
+                                                 base_size=wandb.config.base_size,
+                                                 crop_size=wandb.config.crop_size)
+    val_iter, num_valid = FitFactory.data_iter(wandb.config.data_name, wandb.config.bs_val,
                                                shuffle=False, last_batch='keep',
-                                               root=get_dataset_info(cfg.get('data_name'))[0],
+                                               root=get_dataset_info(wandb.config.data_name)[0],
                                                split='val',
-                                               base_size=cfg.get('base_size'),
-                                               crop_size=cfg.get('crop_size'))
-    criterion = FitFactory.get_criterion(cfg.get('aux'), cfg.get('aux_weight'),
+                                               base_size=wandb.config.base_size,
+                                               crop_size=wandb.config.crop_size)
+    criterion = FitFactory.get_criterion(wandb.config.aux, wandb.config.aux_weight,
                                          # focal_kwargs={'alpha': 1.0, 'gamma': 0.5},
+                                         # sensitive_kwargs={
+                                         #     'nclass': get_dataset_info(wandb.config.data_name)[1],
+                                         #     'alpha': 1.0,
+                                         #     'gamma': 1.0}
                                          )
-    trainer = FitFactory.create_trainer(net, cfg, iters_per_epoch=len(train_iter))
-    metric = SegmentationMetric(nclass=get_dataset_info(cfg.get('data_name'))[1])
+    trainer = FitFactory.create_trainer(net, wandb.config, iters_per_epoch=len(train_iter))
+    metric = SegmentationMetric(nclass=get_dataset_info(wandb.config.data_name)[1])
 
-    run = wandb.init(job_type='train', dir=root_dir(), project=wp_name, config=cfg, reinit=True)
-    wandb.config.ctx = ctx
     wandb.config.num_train = num_train
     wandb.config.num_valid = num_valid
-    wandb.config.start_time = t_start if t_start else get_strftime()
+
+    t_start = get_strftime()
+    logger.info(f'Training start: {t_start}')
+    for k, v in wandb.config.items():
+        logger.info(f'{k}: {v}')
+    logger.info('-----> end hyper-parameters <-----')
+    wandb.config.start_time = get_strftime()
 
     best_score = .0
     for epoch in range(wandb.config.epochs):
@@ -60,7 +94,7 @@ def fit(cfg: dict, ctx: list, wp_name, log_interval=5, t_start=None, no_val=Fals
                              for gpu_data, gpu_target in zip(gpu_datas, gpu_targets)]
             for loss in loss_gpus:
                 autograd.backward(loss)
-            trainer.step(cfg.get('bs_train'))
+            trainer.step(wandb.config.bs_train)
             nd.waitall()
             loss_temp = .0  # sum up all sample loss
             for loss in loss_gpus:
@@ -110,52 +144,34 @@ def fit(cfg: dict, ctx: list, wp_name, log_interval=5, t_start=None, no_val=Fals
                     is_best=False)
 
     run.finish()
-    return best_score
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description="MXNet segmentation",
-        epilog="python train.py --model fcn --ctx 0 1 2 3",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--model', type=str, required=True,
-                        help='model name')
-    parser.add_argument('--ctx', type=int, nargs='+', default=(0,),
-                        help='GPU id or leave None to use CPU')
-    parser.add_argument('--wandb', type=str, default='wandb-demo',
-                        help='project name of wandb')
-    parser.add_argument('--log-interval', type=int, default=5,
-                        help='batch interval for log')
-    parser.add_argument('--no-val', action='store_true', default=False,
-                        help='skip validation during training')
-    arg = parser.parse_args()
-    return arg
 
 
 def main():
     args = parse_args()
-    logger = get_logger(name='train', level=10)
 
     with open('config.yml', 'r', encoding='utf-8') as f:
-        configs = yaml.safe_load(f)
-    if not args.model == configs.get('model_name'):
-        raise RuntimeError(f"Inconsistent model name: "
-                           f"{args.model} v.s. {configs.get('model_name')}")
+        run = wandb.init(job_type='train',
+                         dir=root_dir(),
+                         project=args.wandb,
+                         config=yaml.safe_load(f))
+    if not args.model == wandb.config.model_name:
+        raise RuntimeError(f"Inconsistent model name: {args.model} v.s. {wandb.config.model_name}")
+
+    # if using wandb sweep
+    if args.lr and args.wd:
+        wandb.config.lr = args.lr
+        wandb.config.wd = args.wd
 
     ctx = get_contexts(args.ctx)
+    wandb.config.ctx = ctx  # add contexts to config
 
-    start_time = get_strftime()
-    logger.info(f'Training start: {start_time}')
-    for k, v in configs.items():
-        logger.info(f'{k}: {v}')
-    logger.info('-----> end hyper-parameters <-----')
+    logger = get_logger(name='train', level=10)
 
-    fit(cfg=configs,
+    fit(run=run,
         ctx=ctx,
-        wp_name=args.wandb,
         log_interval=args.log_interval,
-        t_start=start_time,
-        no_val=args.no_val)
+        no_val=args.no_val,
+        logger=logger)
 
 
 if __name__ == '__main__':
