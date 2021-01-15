@@ -1,0 +1,12 @@
+mxnet_cu101==1.5.0
+Cython==0.29.21
+gluoncv==0.9.1
+seaborn==0.11.1
+scikit-image==0.18.1
+wandb==0.10.13
+matplotlib==3.3.3
+numpy==1.16.6
+opencv_python==4.5.1.48
+Pillow==8.1.0
+scipy==1.4.1
+tqdm==4.56.0
