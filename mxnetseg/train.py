@@ -80,7 +80,7 @@ def fit(ctx, log_interval=5, no_val=False, logger=None):
     for k, v in wandb.config.items():
         logger.info(f'{k}: {v}')
     logger.info('-----> end hyper-parameters <-----')
-    wandb.config.start_time = get_strftime()
+    wandb.config.start_time = t_start
 
     best_score = .0
     for epoch in range(wandb.config.epochs):
@@ -111,8 +111,8 @@ def fit(ctx, log_interval=5, no_val=False, logger=None):
             val_loss = .0
             vbar = tqdm(val_iter)
             for i, (data, target) in enumerate(vbar):
-                gpu_datas = split_and_load(data=data, ctx_list=ctx, even_split=False)
-                gpu_targets = split_and_load(data=target, ctx_list=ctx, even_split=False)
+                gpu_datas = split_and_load(data=data, ctx_list=ctx)
+                gpu_targets = split_and_load(data=target, ctx_list=ctx)
                 loss_temp = .0
                 for gpu_data, gpu_target in zip(gpu_datas, gpu_targets):
                     loss_gpu = criterion(*net(gpu_data), gpu_target)
@@ -150,7 +150,8 @@ def main():
     with open('config.yml', 'r', encoding='utf-8') as f:
         cfg = yaml.safe_load(f)
         if not args.model == cfg.get('model_name'):
-            raise RuntimeError(f"Inconsistent model name: {args.model} v.s. {cfg.get('model_name')}")
+            raise RuntimeError(f"Inconsistent model name: "
+                               f"{args.model} v.s. {cfg.get('model_name')}")
 
     wandb.init(job_type='train',
                dir=root_dir(),
