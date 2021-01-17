@@ -6,47 +6,19 @@ This project provides modular implementation for state-of-the-art semantic segme
 
 ## Supported Models
 
-- Attention to scale
-
-  > Chen, Liang-Chieh, et al. "Attention to scale: Scale-aware semantic image segmentation." *Proceedings of the IEEE conference on computer vision and pattern recognition*. 2016.
-
-- BiSeNet
-
-  > Yu, Changqian, et al. "Bisenet: Bilateral segmentation network for real-time semantic segmentation." *Proceedings of the European conference on computer vision (ECCV)*. 2018.
-
-- CANet
-
-  > Tang, Quan, et al. "Attention-guided Chained Context Aggregation for Semantic Segmentation." *arXiv preprint arXiv:2002.12041* (2020).
-
-- Deeplabv3/Deeplabv3+
-
-  > Chen, Liang-Chieh, et al. "Rethinking atrous convolution for semantic image segmentation." *arXiv preprint arXiv:1706.05587* (2017).
-  >
-  > Chen, Liang-Chieh, et al. "Encoder-decoder with atrous separable convolution for semantic image segmentation." *Proceedings of the European conference on computer vision (ECCV)*. 2018.
-  
-- DenseASPP
-
-  > Yang, Maoke, et al. "Denseaspp for semantic segmentation in street scenes." *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition*. 2018.
-
-- FCN
-
-  > Long, Jonathan, Evan Shelhamer, and Trevor Darrell. "Fully convolutional networks for semantic segmentation." *Proceedings of the IEEE conference on computer vision and pattern recognition*. 2015.
-
-- LadderDenseNet
-
-  > Kreso, Ivan, Sinisa Segvic, and Josip Krapac. "Ladder-style densenets for semantic segmentation of large natural images." *Proceedings of the IEEE International Conference on Computer Vision Workshops*. 2017.
-
-- PSPNet
-
-  > Zhao, Hengshuang, et al. "Pyramid scene parsing network." *Proceedings of the IEEE conference on computer vision and pattern recognition*. 2017.
-
-- SeENet
-
-  > Pang, Yanwei, et al. "Towards bridging semantic gap to improve semantic segmentation." *Proceedings of the IEEE International Conference on Computer Vision*. 2019.
-
-- SwiftNet/SwiftNet-PR
-
-  > Orsic, Marin, et al. "In defense of pre-trained imagenet architectures for real-time semantic segmentation of road-driving images." *Proceedings of the IEEE conference on computer vision and pattern recognition*. 2019.
+| Method                                                       | Reference  |
+| ------------------------------------------------------------ | ---------- |
+| [Attention to scale](http://openaccess.thecvf.com/content_cvpr_2016/papers/Chen_Attention_to_Scale_CVPR_2016_paper.pdf) | CVPR 2016  |
+| [BiSeNet](http://openaccess.thecvf.com/content_ECCV_2018/papers/Changqian_Yu_BiSeNet_Bilateral_Segmentation_ECCV_2018_paper.pdf) | ECCV 2018  |
+| [CANet](https://arxiv.org/pdf/2002.12041)                    | ArXiv 2020 |
+| [DeepLabv3](https://arxiv.org/pdf/1706.05587)                | ArXiv 2017 |
+| [DeepLabv3+](http://openaccess.thecvf.com/content_ECCV_2018/papers/Liang-Chieh_Chen_Encoder-Decoder_with_Atrous_ECCV_2018_paper.pdf) | ECCV 2018  |
+| [DenseASPP](http://openaccess.thecvf.com/content_cvpr_2018/papers/Yang_DenseASPP_for_Semantic_CVPR_2018_paper.pdf) | CVPR 2018  |
+| [FCN](https://www.cv-foundation.org/openaccess/content_cvpr_2015/papers/Long_Fully_Convolutional_Networks_2015_CVPR_paper.pdf) | CVPR 2015  |
+| [LadderDenseNet](http://openaccess.thecvf.com/content_ICCV_2017_workshops/papers/w3/Kreso_Ladder-Style_DenseNets_for_ICCV_2017_paper.pdf) | ICCVW 2017 |
+| [PSPNet](http://openaccess.thecvf.com/content_cvpr_2017/papers/Zhao_Pyramid_Scene_Parsing_CVPR_2017_paper.pdf) | CVPR 2017  |
+| [SeENet](http://openaccess.thecvf.com/content_ICCV_2019/papers/Pang_Towards_Bridging_Semantic_Gap_to_Improve_Semantic_Segmentation_ICCV_2019_paper.pdf) | ICCV 2019  |
+| [SwiftNet/SwiftNetPR](http://openaccess.thecvf.com/content_CVPR_2019/papers/Orsic_In_Defense_of_Pre-Trained_ImageNet_Architectures_for_Real-Time_Semantic_Segmentation_CVPR_2019_paper.pdf) | CVPR 2019  |
 
 ## Benchmarks
 

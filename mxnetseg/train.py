@@ -31,7 +31,7 @@ def parse_args():
                         help='model name')
     parser.add_argument('--ctx', type=int, nargs='+', default=(0, 1),
                         help='GPU id or leave None to use CPU')
-    parser.add_argument('--wandb', type=str, default='sweep-demo',
+    parser.add_argument('--wandb', type=str, default='wandb-demo',
                         help='project name of wandb')
     parser.add_argument('--log-interval', type=int, default=5,
                         help='batch interval for log')
@@ -48,7 +48,7 @@ def parse_args():
     return arg
 
 
-def fit(run, ctx, log_interval=5, no_val=False, logger=None):
+def fit(ctx, log_interval=5, no_val=False, logger=None):
     net = FitFactory.get_model(wandb.config, ctx)
     train_iter, num_train = FitFactory.data_iter(wandb.config.data_name, wandb.config.bs_train,
                                                  root=get_dataset_info(wandb.config.data_name)[0],
@@ -143,19 +143,19 @@ def fit(run, ctx, log_interval=5, no_val=False, logger=None):
                     time_stamp=wandb.config.start_time,
                     is_best=False)
 
-    run.finish()
-
 
 def main():
     args = parse_args()
 
     with open('config.yml', 'r', encoding='utf-8') as f:
-        run = wandb.init(job_type='train',
-                         dir=root_dir(),
-                         project=args.wandb,
-                         config=yaml.safe_load(f))
-    if not args.model == wandb.config.model_name:
-        raise RuntimeError(f"Inconsistent model name: {args.model} v.s. {wandb.config.model_name}")
+        cfg = yaml.safe_load(f)
+        if not args.model == cfg.get('model_name'):
+            raise RuntimeError(f"Inconsistent model name: {args.model} v.s. {cfg.get('model_name')}")
+
+    wandb.init(job_type='train',
+               dir=root_dir(),
+               project=args.wandb,
+               config=cfg)
 
     # if using wandb sweep
     if args.lr and args.wd:
@@ -167,8 +167,7 @@ def main():
 
     logger = get_logger(name='train', level=10)
 
-    fit(run=run,
-        ctx=ctx,
+    fit(ctx=ctx,
         log_interval=args.log_interval,
         no_val=args.no_val,
         logger=logger)
